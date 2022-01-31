@@ -5,6 +5,7 @@ const Prefix = 'f!';
 const ytdl = require('ytdl-core');
 const streamOptions = { seek: 0, volume: 0.5 };
 const queue = new Map();
+const fs = require('fs');
 const keep_alive = require('./keep_alive.js');
 const hangman = require('discord-hangman');
 
@@ -54,23 +55,30 @@ bot.on('message', message => {
     break;
 
     case 'hangman':
-      hangman.create(message.channel, 'random', { players: [message.author] }).then(data => {
+    function getRandomLine(filename){
+      var data = fs.readFileSync(filename, "utf8");
+      var lines = data.split('\n');
+      return lines[Math.floor(Math.random()*lines.length)];
+      }   
+    var chosenword = getRandomLine('words.txt');
+      
+      hangman.create(message.channel, 'random',{ word: chosenword,players: [message.author]  }).then(data => {
 
-      if(!data.game) return; // If the game is cancelled or no one joins it
+        if (!data.game) return; // If the game is cancelled or no one joins it
 
-      if (data.game.status === 'won') {
-        if (data.selector) message.channel.send(`Congratulations, you found the word! ${data.selector.username}... You should provide a more complicated word next time!`); // data.selector is the user who chose the word (only in custom game mode)
+        if (data.game.status === 'won') {
+          if (data.selector) message.channel.send(`Congratulations, you found the word! ${data.selector.username}... You should provide a more complicated word next time!`); // data.selector is the user who chose the word (only in custom game mode)
 
-        else message.channel.send('Congratulations you found the word!');
-      }
-      else if (data.game.status === 'lost') {
-        if (data.selector) message.channel.send(`${data.selector.username} Beat you all! The word was ${data.game.word}.`);
-        
-        else message.channel.send(`You lost! The word was ${data.game.word}.`);
-      }
-      else {
-        message.channel.send('15 minutes have passed! The game is over.'); // If no one answers for 15 minutes
-      }
+          else message.channel.send('Congratulations you found the word!');
+        }
+        else if (data.game.status === 'lost') {
+          if (data.selector) message.channel.send(`${data.selector.username} Beat you all! The word was ${data.game.word}.`);
+
+          else message.channel.send(`You lost! The word was ${data.game.word}.`);
+        }
+        else {
+          message.channel.send('15 minutes have passed! The game is over.'); // If no one answers for 15 minutes
+        }
 
       });
     break;
